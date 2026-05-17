@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # LLM (Google Gemini via LangChain)
     google_api_key: str | None = None
-    llm_model: str = "gemini-2.0-flash"
+    llm_model: str = "gemini-2.5-flash"
 
     # Embeddings
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"

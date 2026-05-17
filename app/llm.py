@@ -10,8 +10,11 @@ from .config import settings
 
 
 def _build_llm(model: str | None, temperature: float) -> ChatGoogleGenerativeAI:
+    # LLM_MODEL in the AI service env always takes precedence. Falls back to
+    # whatever the backend passes in the request, then the hardcoded default.
+    resolved = settings.llm_model or model or "gemini-2.5-flash"
     return ChatGoogleGenerativeAI(
-        model=model or settings.llm_model,
+        model=resolved,
         temperature=temperature,
         google_api_key=settings.google_api_key,
         max_output_tokens=1024,
