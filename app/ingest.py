@@ -31,13 +31,17 @@ def chunk_text(text: str) -> list[str]:
     return [c for c in splitter.split_text(text) if c.strip()]
 
 
-def _embed_with_source_context(chunks: list[str], source: str) -> list[list[float]]:
-    """Embed chunks with the source/filename prepended so questions about the
-    document title (e.g. "what's the project name?") can match by similarity.
-    The prepended context is only used for the embedding — the chunk stored in
-    the payload remains the original clean text."""
-    contextualized = [f"[Document: {source}]\n{c}" for c in chunks]
-    return embed_texts(contextualized)
+def _embed_chunks(chunks: list[str]) -> list[list[float]]:
+    """Embed chunks as plain text, matching how queries are embedded.
+
+    Previously this prepended '[Document: filename]' to each chunk before
+    embedding. That caused a vector-space mismatch: stored vectors included
+    the filename prefix but query vectors did not, so even an exact FAQ
+    question scored poorly against its own answer. Embedding both sides the
+    same way (plain text) gives consistent cosine similarity and dramatically
+    improves recall for FAQ-style knowledge bases.
+    """
+    return embed_texts(chunks)
 
 
 def ingest_file(
@@ -51,7 +55,7 @@ def ingest_file(
     chunks = chunk_text(text)
     if not chunks:
         return {"chunks": 0, "stored": 0}
-    vectors = _embed_with_source_context(chunks, filename)
+    vectors = _embed_chunks(chunks)
     payload_chunks = [
         Chunk(
             text=t,
@@ -76,7 +80,7 @@ def ingest_text(
     chunks = chunk_text(text)
     if not chunks:
         return {"chunks": 0, "stored": 0}
-    vectors = _embed_with_source_context(chunks, source)
+    vectors = _embed_chunks(chunks)
     payload_chunks = [
         Chunk(
             text=t,
